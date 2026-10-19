@@ -212,6 +212,7 @@ model Product {
   @@unique([shopId, slug])
   @@index([shopId, status, createdAt])
   @@index([categoryId, status])
+  @@index([status, createdAt])
   @@map("products")
 }
 

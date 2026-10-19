@@ -385,27 +385,63 @@ describe('Catalog Module - Categories, Products, SKUs, Bounded Pagination (e2e)'
       expect(JSON.stringify(res.body)).toContain('limit must not be greater than 50');
     });
 
-    it('3.3 GET /api/v1/products?search=... -> keyword search in name and description', async () => {
+    it('3.3 GET /api/v1/products?page=0 -> rejects invalid page < 1 with 400', async () => {
       const res = await request(app.getHttpServer())
-        .get(`/api/v1/products?search=${timestamp}`)
+        .get('/api/v1/products?page=0')
+        .expect(400);
+
+      expect(JSON.stringify(res.body)).toContain('page must not be less than 1');
+    });
+
+    it('3.4 GET /api/v1/products?limit=0 -> rejects invalid limit < 1 with 400', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/v1/products?limit=0')
+        .expect(400);
+
+      expect(JSON.stringify(res.body)).toContain('limit must not be less than 1');
+    });
+
+    it('3.5 GET /api/v1/products?minPrice=50000000&maxPrice=10000000 -> rejects invalid range with 400', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/v1/products?minPrice=50000000&maxPrice=10000000')
+        .expect(400);
+
+      expect(res.body.message).toContain('minPrice cannot be greater than maxPrice');
+    });
+
+    it('3.6 GET /api/v1/products?search=nonexistent_xyz -> returns empty result with clean metadata', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/v1/products?search=nonexistent_xyz_completely_random_999999')
+        .expect(200);
+
+      expect(res.body.data).toEqual([]);
+      expect(res.body.meta.total).toBe(0);
+      expect(res.body.meta.totalPages).toBe(0);
+      expect(res.body.meta.hasNextPage).toBe(false);
+      expect(res.body.meta.hasPrevPage).toBe(false);
+    });
+
+    it('3.7 GET /api/v1/products?sortBy=invalid_sort -> rejects non-whitelisted sort with 400', async () => {
+      await request(app.getHttpServer())
+        .get('/api/v1/products?sortBy=invalid_column_name')
+        .expect(400);
+    });
+
+    it('3.8 GET /api/v1/products?search=...&categoryId=...&shopId=...&minPrice=...&maxPrice=...&sortBy=newest -> query combinations work correctly', async () => {
+      const res = await request(app.getHttpServer())
+        .get(
+          `/api/v1/products?search=${timestamp}&categoryId=${testSubcategoryId}&shopId=${testShopId}&minPrice=20000000&maxPrice=35000000&sortBy=newest&page=1&limit=10`,
+        )
         .expect(200);
 
       expect(res.body.data.length).toBeGreaterThanOrEqual(1);
       const found = res.body.data.find((p: any) => p.id === testProductId);
       expect(found).toBeDefined();
+      expect(res.body.meta.page).toBe(1);
+      expect(res.body.meta.limit).toBe(10);
     });
 
-    it('3.4 GET /api/v1/products?minPrice=30000000 -> filters out products without matching SKU price', async () => {
-      const res = await request(app.getHttpServer())
-        .get(`/api/v1/products?search=${timestamp}&minPrice=35000000`)
-        .expect(200);
-
-      // Max price of our created product SKUs was 31,990,000, so minPrice 35,000,000 should return 0 matching products
-      const found = res.body.data.find((p: any) => p.id === testProductId);
-      expect(found).toBeUndefined();
-    });
-
-    it('3.5 GET /api/v1/products/:idOrSlug -> public detail with active SKUs', async () => {
+    it('3.9 GET /api/v1/products/:idOrSlug -> public detail with active SKUs', async () => {
       const res = await request(app.getHttpServer())
         .get(`/api/v1/products/${testProductSlug}`)
         .expect(200);

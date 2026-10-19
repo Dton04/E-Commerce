@@ -143,8 +143,15 @@ export class ProductsService {
   ): Promise<PaginatedResult<any>> {
     const page = Number(filter.page) || 1;
     const limit = Math.min(Number(filter.limit) || 10, 50);
-    const skip = (page - 1) * limit;
+    if (
+      filter.minPrice !== undefined &&
+      filter.maxPrice !== undefined &&
+      filter.minPrice > filter.maxPrice
+    ) {
+      throw new BadRequestException('minPrice cannot be greater than maxPrice');
+    }
 
+    const skip = (page - 1) * limit;
     const where: Prisma.ProductWhereInput = {};
 
     if (isPublic) {
@@ -209,7 +216,7 @@ export class ProductsService {
       }),
     ]);
 
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = total > 0 ? Math.ceil(total / limit) : 0;
 
     return {
       data,
