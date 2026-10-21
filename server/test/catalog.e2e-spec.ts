@@ -507,4 +507,94 @@ describe('Catalog Module - Categories, Products, SKUs, Bounded Pagination (e2e)'
         .expect(404);
     });
   });
+
+  describe('5. Product Media & Image Upload', () => {
+    const dummyPngBuffer = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64',
+    );
+    let uploadedImageUrl: string;
+
+    it('5.1 POST /api/v1/upload/image -> 401 when unauthenticated', async () => {
+      await request(app.getHttpServer())
+        .post('/api/v1/upload/image')
+        .attach('file', dummyPngBuffer, 'test-image.png')
+        .expect(401);
+    });
+
+    it('5.2 POST /api/v1/upload/image -> 403 when authenticated as CUSTOMER', async () => {
+      await request(app.getHttpServer())
+        .post('/api/v1/upload/image')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .attach('file', dummyPngBuffer, 'test-image.png')
+        .expect(403);
+    });
+
+    it('5.3 POST /api/v1/upload/image -> 400 when uploading non-image file (.txt)', async () => {
+      const textBuffer = Buffer.from('hello world this is not an image');
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/upload/image')
+        .set('Authorization', `Bearer ${sellerToken}`)
+        .attach('file', textBuffer, 'test.txt')
+        .expect(400);
+
+      expect(res.body.message).toContain('Only images (JPEG, PNG, WEBP, GIF, SVG) are allowed');
+    });
+
+    it('5.4 POST /api/v1/upload/image -> 200 upload single image by SELLER', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/upload/image')
+        .set('Authorization', `Bearer ${sellerToken}`)
+        .attach('file', dummyPngBuffer, 'logo.png')
+        .expect(200);
+
+      expect(res.body).toHaveProperty('url');
+      expect(res.body.url).toMatch(/^\/uploads\/images\/.*\.png$/);
+      expect(res.body.mimetype).toBe('image/png');
+      uploadedImageUrl = res.body.url;
+    });
+
+    it('5.5 POST /api/v1/upload/images -> 200 upload multiple images by SELLER', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/upload/images')
+        .set('Authorization', `Bearer ${sellerToken}`)
+        .attach('files', dummyPngBuffer, 'gallery-1.png')
+        .attach('files', dummyPngBuffer, 'gallery-2.png')
+        .expect(200);
+
+      expect(res.body).toHaveProperty('urls');
+      expect(res.body.urls).toHaveLength(2);
+      expect(res.body.files).toHaveLength(2);
+    });
+
+    it('5.6 POST /api/v1/products/:id/images -> 403 when unauthorized seller uploads to product', async () => {
+      await request(app.getHttpServer())
+        .post(`/api/v1/products/${testProductId}/images`)
+        .set('Authorization', `Bearer ${otherSellerToken}`)
+        .attach('images', dummyPngBuffer, 'unauthorized.png')
+        .expect(403);
+    });
+
+    it('5.7 POST /api/v1/products/:id/images -> 200 authorized seller appends image directly to product', async () => {
+      const res = await request(app.getHttpServer())
+        .post(`/api/v1/products/${testProductId}/images`)
+        .set('Authorization', `Bearer ${sellerToken}`)
+        .attach('images', dummyPngBuffer, 'product-side.png')
+        .expect(200);
+
+      expect(res.body.images.length).toBeGreaterThanOrEqual(1);
+      const added = res.body.images.find((img: string) => img.includes('.png'));
+      expect(added).toBeDefined();
+    });
+
+    it('5.8 DELETE /api/v1/products/:id/images -> 200 authorized seller removes image from product', async () => {
+      const res = await request(app.getHttpServer())
+        .delete(`/api/v1/products/${testProductId}/images`)
+        .set('Authorization', `Bearer ${sellerToken}`)
+        .send({ imageUrl: uploadedImageUrl })
+        .expect(200);
+
+      expect(res.body.images).not.toContain(uploadedImageUrl);
+    });
+  });
 });

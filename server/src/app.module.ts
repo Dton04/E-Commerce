@@ -9,6 +9,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 
 import { CategoriesModule } from './modules/categories/categories.module';
 import { ProductsModule } from './modules/products/products.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 import { validateEnv } from './common/config/env.validation';
 
@@ -22,6 +23,7 @@ import { validateEnv } from './common/config/env.validation';
     AuthModule,
     CategoriesModule,
     ProductsModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [

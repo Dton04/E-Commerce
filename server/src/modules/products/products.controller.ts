@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -9,10 +10,15 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -25,9 +31,12 @@ import {
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { multerImageUploadOptions } from '../upload/multer.config';
+import { UploadService } from '../upload/upload.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CreateProductSkuDto } from './dto/create-sku.dto';
 import { ProductFilterDto } from './dto/product-filter.dto';
+import { RemoveProductImageDto } from './dto/remove-image.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateProductSkuDto } from './dto/update-sku.dto';
 import { ProductsService } from './products.service';
@@ -35,7 +44,10 @@ import { ProductsService } from './products.service';
 @ApiTags('Products')
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly uploadService: UploadService,
+  ) {}
 
   @Public()
   @Get()
@@ -150,5 +162,83 @@ export class ProductsController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.productsService.removeSku(skuId, user.userId, user.roles);
+  }
+
+  @Post(':id/images')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.SELLER, UserRole.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @UseInterceptors(FilesInterceptor('images', 10, multerImageUploadOptions))
+  @ApiOperation({
+    summary: 'Upload and append images directly to product (SELLER/ADMIN)',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        images: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+          description:
+            'Image files to add to product gallery (max 10 files, 5MB each)',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Images uploaded and added to product successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'No files provided or invalid file format',
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Product not found' })
+  async uploadProductImages(
+    @Param('id') productId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @UploadedFiles() files?: Express.Multer.File[],
+  ) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('At least one image file is required');
+    }
+    const { urls } = this.uploadService.formatFilesResponse(files);
+    return this.productsService.addProductImages(
+      productId,
+      user.userId,
+      user.roles,
+      urls,
+    );
+  }
+
+  @Delete(':id/images')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.SELLER, UserRole.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Remove an image from product gallery (SELLER/ADMIN)',
+  })
+  @ApiResponse({ status: 200, description: 'Image removed from product' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 404, description: 'Product not found' })
+  async removeProductImage(
+    @Param('id') productId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: RemoveProductImageDto,
+  ) {
+    const updatedProduct = await this.productsService.removeProductImage(
+      productId,
+      user.userId,
+      user.roles,
+      dto.imageUrl,
+    );
+    this.uploadService.deleteFile(dto.imageUrl);
+    return updatedProduct;
   }
 }

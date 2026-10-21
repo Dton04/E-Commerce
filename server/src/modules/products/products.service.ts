@@ -462,4 +462,60 @@ export class ProductsService {
 
     return { message: `Product '${product.name}' archived successfully` };
   }
+
+  async addProductImages(
+    productId: string,
+    userId: string,
+    userRoles: UserRole[],
+    imageUrls: string[],
+  ) {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
+    if (!product) {
+      throw new NotFoundException(`Product with ID '${productId}' not found`);
+    }
+
+    await this.assertShopAccess(product.shopId, userId, userRoles);
+
+    const updatedImages = [...product.images, ...imageUrls];
+
+    return this.prisma.product.update({
+      where: { id: productId },
+      data: { images: updatedImages },
+      include: {
+        category: { select: { id: true, name: true, slug: true } },
+        shop: { select: { id: true, name: true, slug: true, logoUrl: true } },
+        skus: true,
+      },
+    });
+  }
+
+  async removeProductImage(
+    productId: string,
+    userId: string,
+    userRoles: UserRole[],
+    imageUrl: string,
+  ) {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
+    if (!product) {
+      throw new NotFoundException(`Product with ID '${productId}' not found`);
+    }
+
+    await this.assertShopAccess(product.shopId, userId, userRoles);
+
+    const updatedImages = product.images.filter((img) => img !== imageUrl);
+
+    return this.prisma.product.update({
+      where: { id: productId },
+      data: { images: updatedImages },
+      include: {
+        category: { select: { id: true, name: true, slug: true } },
+        shop: { select: { id: true, name: true, slug: true, logoUrl: true } },
+        skus: true,
+      },
+    });
+  }
 }

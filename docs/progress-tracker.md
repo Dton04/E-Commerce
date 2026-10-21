@@ -14,7 +14,7 @@ Statuses: Todo, In Progress, Blocked, Done. Done requires verified acceptance ev
 | --- | --- | --- | --- |
 | BASE-01 | NestJS + PostgreSQL/Prisma foundation | Done | Schema, Prisma 7 adapter-pg service, initial migration applied to PostgreSQL; npm run build passed; Nest bootstrap verified. |
 | AUTH-01/02 | Authentication and server RBAC | Done | Register, login, refresh rotation (SHA-256 hash + jti), logout; global JwtAuthGuard, RolesGuard; 10/10 e2e tests passed in test/auth.e2e-spec.ts; build verified. |
-| CAT-01/02 | Catalog/media/search/pagination | Done | Categories hierarchy & admin CRUD, Product + atomic SKU creation, bounded pagination (max 50 limit), keyword & price range filtering, shop membership authorization, soft SKU deactivation, index [status, createdAt]; 27/27 e2e tests passed in test/catalog.e2e-spec.ts (covering query combinations, invalid ranges, empty results, sort whitelist); regression verified with 10/10 in test/auth.e2e-spec.ts (37/37 passing); build verified. |
+| CAT-01/02 | Catalog/media/search/pagination | Done | Categories hierarchy & admin CRUD, Product + atomic SKU creation, bounded pagination (max 50 limit), keyword & price range filtering, shop membership authorization, soft SKU deactivation, index [status, createdAt], UploadModule (Multer single/multi image upload, static serving, gallery append/remove); 35/35 e2e tests passed in test/catalog.e2e-spec.ts; regression verified with 10/10 in test/auth.e2e-spec.ts (45/45 passing e2e tests, 51 total tests); build verified. |
 | CART-01/ORD-01 | Persistent cart and transactional checkout | Todo | Server-authoritative prices and order snapshots verified; depends on stock policy. |
 | INV-01 | Safe stock handling | Todo | Concurrency test proves no oversell; define reserve/release policy. |
 | PAY-01/ORD-02 | Sandbox payment, webhook, order lifecycle | Todo | Signature/idempotency tests and valid transitions/history; choose provider/policies. |
@@ -25,7 +25,7 @@ Statuses: Todo, In Progress, Blocked, Done. Done requires verified acceptance ev
 
 ## Verified Repository Artifacts
 
-NestJS modular monolith; Prisma 7 with PostgreSQL adapter; schema & migrations; Auth & RBAC module (/api/v1/auth) with refresh rotation; Catalog module (/api/v1/categories, /api/v1/products) with multi-variant SKUs, bounded search/pagination and composite indexes (status + createdAt); Swagger docs at /api/docs; NestJS best practices skills; 37 passing e2e tests.
+NestJS modular monolith; Prisma 7 with PostgreSQL adapter; schema & migrations; Auth & RBAC module (/api/v1/auth) with refresh rotation; Catalog module (/api/v1/categories, /api/v1/products) with multi-variant SKUs, bounded search/pagination and composite indexes (status + createdAt); UploadModule (/api/v1/upload, static file serving at /uploads/); Swagger docs at /api/docs; NestJS best practices skills; 45 passing e2e tests.
 
 ## Gaps
 

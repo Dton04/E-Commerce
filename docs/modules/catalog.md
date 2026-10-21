@@ -41,19 +41,25 @@ server/
 │   │   │   ├── categories.controller.ts      # Public GET, Admin-only POST/PATCH/DELETE
 │   │   │   ├── categories.service.ts         # Hierarchy validation, slug conflict detection, safe deletion
 │   │   │   └── categories.module.ts          # Exports CategoriesService
+│   │   ├── upload/
+│   │   │   ├── multer.config.ts              # Disk storage, UUID naming, 5MB limit, strict MIME filter
+│   │   │   ├── upload.controller.ts          # POST /upload/image & POST /upload/images (SELLER, ADMIN)
+│   │   │   ├── upload.service.ts             # File response formatting & safe disk file cleanup
+│   │   │   └── upload.module.ts              # Exports UploadService & MulterModule
 │   │   └── products/
 │   │       ├── dto/
 │   │       │   ├── create-sku.dto.ts         # SKU code, price, stock, JSON attributes, isActive
 │   │       │   ├── update-sku.dto.ts         # PartialType SKU update DTO
 │   │       │   ├── create-product.dto.ts     # shopId, categoryId, name, images, skus array
 │   │       │   ├── update-product.dto.ts     # PartialType excluding shopId and skus
-│   │       │   └── product-filter.dto.ts     # search, categoryId, shopId, minPrice, maxPrice, status, sortBy
-│   │       ├── products.controller.ts        # Public search/detail & Seller/Admin management
-│   │       ├── products.service.ts           # Atomic transaction creation, bounded query builder, access checks
-│   │       └── products.module.ts            # Exports ProductsService
-│   └── app.module.ts                         # Registers CategoriesModule and ProductsModule
+│   │       │   ├── product-filter.dto.ts     # search, categoryId, shopId, minPrice, maxPrice, status, sortBy
+│   │       │   └── remove-image.dto.ts       # imageUrl validation for safe gallery removal
+│   │       ├── products.controller.ts        # Public search/detail, Seller/Admin CRUD & image upload
+│   │       ├── products.service.ts           # Atomic transaction creation, query builder, image management
+│   │       └── products.module.ts            # Imports UploadModule, exports ProductsService
+│   └── app.module.ts                         # Registers CategoriesModule, ProductsModule, UploadModule
 └── test/
-    └── catalog.e2e-spec.ts                   # 23 comprehensive integration tests
+    └── catalog.e2e-spec.ts                   # 35 comprehensive integration tests
 ```
 
 ---
@@ -179,6 +185,33 @@ sequenceDiagram
     Controller-->>Buyer: HTTP 200 OK with data & metadata
 ```
 
+### 4.3 Product Media Upload & Gallery Management
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Merchant as Shop Owner / Manager
+    participant Controller as ProductsController
+    participant Guard as RolesGuard
+    participant Multer as Multer DiskStorage
+    participant Service as ProductsService
+    participant UploadSvc as UploadService
+    participant Prisma as PrismaService (PostgreSQL)
+
+    Merchant->>Controller: POST /api/v1/products/:id/images (multipart/form-data)
+    Controller->>Guard: Verify JWT role (SELLER or ADMIN)
+    Guard-->>Controller: Allowed
+    Controller->>Multer: Validate MIME type & file size (<= 5MB)
+    Multer->>Multer: Generate UUID filename & persist to uploads/images/
+    Multer-->>Controller: Injected file array (Express.Multer.File[])
+    Controller->>Service: addProductImages(productId, userId, userRoles, files)
+    Service->>Prisma: Find Product and assertShopAccess(product.shopId, userId)
+    Service->>UploadSvc: formatFilesResponse(files) -> extract /uploads/images/{uuid} URLs
+    Service->>Prisma: update(Product { images: [...existing, ...newUrls] })
+    Prisma-->>Service: Updated Product
+    Service-->>Controller: Return Product with updated gallery
+    Controller-->>Merchant: HTTP 200 OK
+```
+
 ---
 
 ## 5. Key Engineering Decisions & Trade-offs
@@ -191,14 +224,15 @@ sequenceDiagram
 | **Atomic Transaction (`prisma.$transaction`)** | Sequential Product create then SKU create | If SKU creation fails (e.g. duplicate SKU code or DB disconnect), sequential creation leaves an "orphan" product without SKUs, causing broken cart workflows and frontend rendering errors. |
 | **Soft SKU Deactivation vs Cascading Delete** | `onDelete: Cascade` on SKUs | Hard deleting an SKU that has historical orders or active carts violates financial auditability and breaks order history foreign keys (`ShopOrderItem.skuId`). Soft deactivation (`isActive: false`) preserves historical integrity. |
 | **Adjacency List for Categories** | Closure Table / Materialized Path | E-commerce category trees rarely exceed 3-4 levels of depth. An adjacency list (`parentId`) is simple to maintain, incurs zero denormalization overhead on writes, and can easily be fetched with eager loading. |
+| **Local Disk + UUID Naming vs Direct Cloud S3** | In-memory Multer + AWS S3 Direct Upload | Local disk with UUID sanitized naming provides zero-dependency development/testing, eliminating AWS credential overhead during initial development. Storage is encapsulated behind `UploadService`, allowing seamless drop-in replacement with an AWS S3/Cloudflare R2 adapter via the Strategy pattern in production. |
 
 ---
 
 ## 6. Acceptance & Testing Evidence
 
-All 23 integration test cases in `test/catalog.e2e-spec.ts` pass with zero regressions:
+All 35 integration test cases in `test/catalog.e2e-spec.ts` pass with zero regressions:
 ```text
-PASS test/catalog.e2e-spec.ts (114.551 s)
+PASS test/catalog.e2e-spec.ts (3.003 s)
   Catalog Module - Categories, Products, SKUs, Bounded Pagination (e2e)
     1. Category Management & RBAC
       √ 1.1 POST /api/v1/categories -> should reject unauthenticated request with 401
@@ -218,18 +252,31 @@ PASS test/catalog.e2e-spec.ts (114.551 s)
     3. Public Search, Filter & Bounded Pagination
       √ 3.1 GET /api/v1/products -> public paginated list with metadata
       √ 3.2 GET /api/v1/products?limit=100 -> strictly enforced bounded limit (Max 50 rejects with 400)
-      √ 3.3 GET /api/v1/products?search=... -> keyword search in name and description
-      √ 3.4 GET /api/v1/products?minPrice=30000000 -> filters out products without matching SKU price
-      √ 3.5 GET /api/v1/products/:idOrSlug -> public detail with active SKUs
+      √ 3.3 GET /api/v1/products?page=0 -> rejects invalid page < 1 with 400
+      √ 3.4 GET /api/v1/products?limit=0 -> rejects invalid limit < 1 with 400
+      √ 3.5 GET /api/v1/products?minPrice=50000000&maxPrice=10000000 -> rejects invalid range with 400
+      √ 3.6 GET /api/v1/products?search=nonexistent_xyz -> returns empty result with clean metadata
+      √ 3.7 GET /api/v1/products?sortBy=invalid_sort -> rejects non-whitelisted sort with 400
+      √ 3.8 GET /api/v1/products?search=...&categoryId=...&shopId=...&minPrice=...&maxPrice=...&sortBy=newest -> query combinations work correctly
+      √ 3.9 GET /api/v1/products/:idOrSlug -> public detail with active SKUs
     4. SKU Management & Product Lifecycle
       √ 4.1 POST /api/v1/products/:id/skus -> seller can add a new SKU variant
       √ 4.2 PATCH /api/v1/products/skus/:skuId -> seller can update price & stock
       √ 4.3 DELETE /api/v1/products/skus/:skuId -> seller can deactivate/delete SKU
       √ 4.4 DELETE /api/v1/products/:id -> seller can archive product
       √ 4.5 GET /api/v1/products/:id -> archived product is not accessible publicly (404)
+    5. Product Media & Image Upload
+      √ 5.1 POST /api/v1/upload/image -> 401 when unauthenticated
+      √ 5.2 POST /api/v1/upload/image -> 403 when authenticated as CUSTOMER
+      √ 5.3 POST /api/v1/upload/image -> 400 when uploading non-image file (.txt)
+      √ 5.4 POST /api/v1/upload/image -> 200 upload single image by SELLER
+      √ 5.5 POST /api/v1/upload/images -> 200 upload multiple images by SELLER
+      √ 5.6 POST /api/v1/products/:id/images -> 403 when unauthorized seller uploads to product
+      √ 5.7 POST /api/v1/products/:id/images -> 200 authorized seller appends image directly to product
+      √ 5.8 DELETE /api/v1/products/:id/images -> 200 authorized seller removes image from product
 
 Test Suites: 1 passed, 1 total
-Tests:       23 passed, 23 total
+Tests:       35 passed, 35 total
 ```
 
 ---
@@ -338,3 +385,26 @@ When a seller issues a `POST /api/v1/products` or `PATCH /api/v1/products/:id`:
      }
      ```
 This guarantees that Seller A cannot create, update, or archive products belonging to Seller B, even if Seller A tampers with the `shopId` in the request body.
+
+---
+
+### Q9: What security measures and architectural patterns should be used for file uploads in NestJS?
+**Answer:**
+File upload endpoints are common attack vectors for Remote Code Execution (RCE), Path Traversal, and Denial of Service (DoS). We employ 5 layers of defense:
+1. **Filename Sanitization:** Never store files using the client's original filename (`file.originalname`). Malicious clients can supply names like `../../etc/cron.d/evil.sh` or overwrite system files. We generate a cryptographically random UUID (`crypto.randomUUID()`) and strictly append only the lowercase extension (`extname`).
+2. **Dual Whitelist Validation:** Validate both the HTTP `mimetype` (`image/jpeg`, `image/png`, `image/webp`, `image/gif`, `image/svg+xml`) and the file extension (`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`, `.svg`). Rejecting any mismatch blocks executable scripts (.php, .js, .exe) masquerading as images.
+3. **Strict Bounded Quotas:** Enforce `limits: { fileSize: 5 * 1024 * 1024 }` (5MB) and `maxCount: 10` in Multer options. Oversized files are rejected before consuming server RAM or filling up disk volumes.
+4. **Role-Based Authorization:** File upload endpoints are guarded by `JwtAuthGuard` and `RolesGuard(['SELLER', 'ADMIN'])`, preventing anonymous attackers from using the server as a free/malicious hosting service.
+5. **Orphaned File Cleanup:** When a seller deletes an image via `DELETE /api/v1/products/:id/images`, `UploadService.deleteFile` safely verifies that the file resides strictly within the sanitized uploads root directory, deletes it from disk via `fs.promises.unlink`, and updates the product's image array atomically.
+
+---
+
+### Q10: How do you serve uploaded media in production, and how does the local disk architecture transition to CDN / Cloud Object Storage?
+**Answer:**
+1. **Local Disk & Static Assets (Development / On-Premise):**
+   NestJS configures Express static asset serving via `app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads/' })`. Files are accessed via `/uploads/images/{uuid}.png`.
+2. **Transitioning to Cloud Object Storage (S3 / R2 / GCS) in Production:**
+   Because all file operations are encapsulated in `UploadService`, we can switch implementations using the **Strategy Pattern** or **Provider Injection**:
+   - Instead of Multer `diskStorage`, configure an S3 / Cloudflare R2 client (via `@aws-sdk/client-s3` or presigned URLs).
+   - The controller signature remains identical; `UploadService.uploadFile` returns `{ url: "https://cdn.marketplace.com/products/{uuid}.webp" }`.
+   - By serving media through a CDN (Cloudflare / CloudFront) in front of the object store, we achieve edge caching, automatic WebP/AVIF compression, and offload all static asset traffic from application servers.
