@@ -20,6 +20,7 @@ import {
   ApiBody,
   ApiConsumes,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -47,7 +48,7 @@ export class ProductsController {
   constructor(
     private readonly productsService: ProductsService,
     private readonly uploadService: UploadService,
-  ) {}
+  ) { }
 
   @Public()
   @Get()
@@ -173,6 +174,11 @@ export class ProductsController {
   @ApiOperation({
     summary: 'Upload and append images directly to product (SELLER/ADMIN)',
   })
+  @ApiParam({
+    name: 'id',
+    description: 'Product UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -223,6 +229,11 @@ export class ProductsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'Remove an image from product gallery (SELLER/ADMIN)',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Product UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiResponse({ status: 200, description: 'Image removed from product' })
   @ApiResponse({ status: 403, description: 'Forbidden' })
