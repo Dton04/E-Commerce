@@ -3,9 +3,22 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Search, ShoppingCart, User, Menu, X } from 'lucide-react';
+import { Category } from '@/src/types';
 
-export default function StoreHeader() {
+interface HeaderProps {
+  categories?: Category[];
+}
+
+export default function StoreHeader({ categories = [] }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      window.location.href = `/?search=${encodeURIComponent(searchQuery.trim())}`;
+    }
+  };
 
   return (
     <header className="w-full bg-white border-b border-slate-200 sticky top-0 z-50">
@@ -24,16 +37,21 @@ export default function StoreHeader() {
         </Link>
 
         {/* Ô Tìm kiếm */}
-        <div className="flex-1 max-w-xl mx-4 hidden md:block">
+        <form
+          onSubmit={handleSearchSubmit}
+          className="flex-1 max-w-xl mx-4 hidden md:block"
+        >
           <div className="relative w-full">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm sản phẩm, thương hiệu..."
               className="w-full bg-[#f8fafc] text-sm text-slate-900 placeholder:text-slate-400 pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:bg-white focus:border-[#4338ca] focus:ring-2 focus:ring-[#4338ca]/10 outline-none transition-all"
             />
           </div>
-        </div>
+        </form>
 
         {/* Hành động & Người dùng */}
         <div className="flex items-center gap-5 sm:gap-6 text-sm font-medium text-slate-700">
@@ -76,53 +94,62 @@ export default function StoreHeader() {
 
       {/* Mobile search bar */}
       <div className="px-4 pb-3 md:hidden">
-        <div className="relative w-full">
+        <form onSubmit={handleSearchSubmit} className="relative w-full">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm sản phẩm, thương hiệu..."
             className="w-full bg-[#f8fafc] text-sm text-slate-900 placeholder:text-slate-400 pl-10 pr-4 py-2 rounded-lg border border-slate-200 outline-none"
           />
-        </div>
+        </form>
       </div>
 
-      {/* 3. Danh mục (Category Navigation Bar) */}
+      {/* 3. Danh mục (Category Navigation Bar - dynamic from Backend) */}
       <div className="border-t border-slate-100 bg-white">
         <div className="max-w-[1312px] mx-auto px-4 sm:px-8 py-2.5 flex items-center gap-6 overflow-x-auto text-xs sm:text-sm font-medium text-slate-600 whitespace-nowrap scrollbar-none">
           <Link
             href="/categories"
-            className="flex items-center gap-1.5 font-bold text-slate-900 hover:text-[#4338ca] transition-colors"
+            className="flex items-center gap-1.5 font-bold text-slate-900 hover:text-[#4338ca] transition-colors shrink-0"
           >
             <span>☰</span>
             <span>Tất cả danh mục</span>
           </Link>
-          <Link
-            href="/?category=tech"
-            className="hover:text-slate-900 transition-colors"
-          >
-            Công nghệ
-          </Link>
-          <Link
-            href="/?category=home"
-            className="hover:text-slate-900 transition-colors"
-          >
-            Nhà cửa & đời sống
-          </Link>
-          <Link
-            href="/?category=fashion"
-            className="hover:text-slate-900 transition-colors"
-          >
-            Thời trang
-          </Link>
+
+          {categories && categories.length > 0 ? (
+            categories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/?categoryId=${cat.id}`}
+                className="hover:text-slate-900 transition-colors shrink-0"
+              >
+                {cat.name}
+              </Link>
+            ))
+          ) : (
+            <>
+              <Link href="/?category=smartphones" className="hover:text-slate-900 transition-colors shrink-0">
+                Smartphones
+              </Link>
+              <Link href="/?category=laptops" className="hover:text-slate-900 transition-colors shrink-0">
+                Laptops
+              </Link>
+              <Link href="/?category=audio" className="hover:text-slate-900 transition-colors shrink-0">
+                Audio & Headphones
+              </Link>
+            </>
+          )}
+
           <Link
             href="/?tab=deals"
-            className="hover:text-slate-900 transition-colors"
+            className="hover:text-slate-900 transition-colors shrink-0"
           >
             Ưu đãi hôm nay
           </Link>
           <Link
             href="/?tab=for-you"
-            className="text-[#4338ca] font-semibold hover:text-[#3730a3] transition-colors"
+            className="text-[#4338ca] font-semibold hover:text-[#3730a3] transition-colors shrink-0"
           >
             Dành riêng cho bạn
           </Link>
@@ -147,19 +174,19 @@ export default function StoreHeader() {
             Tài khoản (Minh Anh)
           </Link>
           <div className="pt-2 border-t border-slate-100 space-y-2 text-sm text-slate-600">
-            <Link href="/?category=tech" className="block py-1">
-              Công nghệ
-            </Link>
-            <Link href="/?category=home" className="block py-1">
-              Nhà cửa & đời sống
-            </Link>
-            <Link href="/?category=fashion" className="block py-1">
-              Thời trang
-            </Link>
+            {categories.map((c) => (
+              <Link
+                key={c.id}
+                href={`/?categoryId=${c.id}`}
+                onClick={() => setMobileMenuOpen(false)}
+                className="block py-1"
+              >
+                {c.name}
+              </Link>
+            ))}
           </div>
         </div>
       )}
     </header>
   );
 }
-

@@ -1,4 +1,5 @@
 import { Category, PaginatedResult, Product, ProductFilterParams } from '../types';
+import { StorefrontProductItem } from '../components/storefront/ProductCard';
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
@@ -32,9 +33,35 @@ export function getLowestPrice(product: Product): number {
   const activeSkus = product.skus.filter((sku) => sku.isActive);
   if (activeSkus.length === 0) return 0;
   const prices = activeSkus.map((sku) =>
-    typeof sku.price === 'string' ? parseFloat(sku.price) : sku.price,
+    typeof sku.price === 'string' ? parseFloat(sku.price) : Number(sku.price),
   );
   return Math.min(...prices);
+}
+
+/**
+ * Chuyển đổi dữ liệu Product từ NestJS backend thành giao diện StorefrontProductItem (chuẩn Figma)
+ */
+export function mapBackendProductToStorefront(
+  product: Product,
+  badge?: string,
+): StorefrontProductItem {
+  const lowestPrice = getLowestPrice(product);
+  const originalPriceNumber = lowestPrice > 0 ? Math.round(lowestPrice * 1.2) : 0;
+
+  return {
+    id: product.id,
+    badge,
+    name: product.name,
+    image:
+      product.images && product.images.length > 0
+        ? resolveImageUrl(product.images[0])
+        : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80',
+    rating: '4,8',
+    reviews: '86',
+    price: formatPrice(lowestPrice),
+    originalPrice: formatPrice(originalPriceNumber),
+    tags: 'Giao nhanh · Hàng chính hãng',
+  };
 }
 
 export async function fetchProducts(
@@ -50,25 +77,46 @@ export async function fetchProducts(
   if (params.maxPrice) query.set('maxPrice', params.maxPrice.toString());
   if (params.sortBy) query.set('sortBy', params.sortBy);
 
-  const res = await fetch(`${API_BASE_URL}/products?${query.toString()}`, {
-    cache: 'no-store',
-  });
+  try {
+    const res = await fetch(`${API_BASE_URL}/products?${query.toString()}`, {
+      // Dùng ISR hoặc tag revalidate tương thích Next.js 16 Cache
+      next: { revalidate: 30 },
+    });
 
-  if (!res.ok) {
-    throw new Error(`Failed to fetch products: ${res.statusText}`);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch products: ${res.statusText}`);
+    }
+
+    return res.json();
+  } catch (error) {
+    console.warn('Backend API connection fallback (fetchProducts):', error);
+    return {
+      data: [],
+      meta: {
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPrevPage: false,
+      },
+    };
   }
-
-  return res.json();
 }
 
 export async function fetchCategories(): Promise<Category[]> {
-  const res = await fetch(`${API_BASE_URL}/categories`, {
-    next: { revalidate: 60 },
-  });
+  try {
+    const res = await fetch(`${API_BASE_URL}/categories`, {
+      next: { revalidate: 60 },
+    });
 
-  if (!res.ok) {
-    throw new Error(`Failed to fetch categories: ${res.statusText}`);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch categories: ${res.statusText}`);
+    }
+
+    return res.json();
+  } catch (error) {
+    console.warn('Backend API connection fallback (fetchCategories):', error);
+    return [];
   }
-
-  return res.json();
 }
