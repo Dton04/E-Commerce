@@ -1,49 +1,48 @@
-import React, { Suspense } from 'react';
-import HeroBanner from '../src/components/home/HeroBanner';
-import CategorySection from '../src/components/home/CategorySection';
-import FeaturedProducts from '../src/components/home/FeaturedProducts';
-import ValueProps from '../src/components/home/ValueProps';
-import AffiliateCtaSection from '../src/components/home/AffiliateCtaSection';
-
-function CatalogLoadingFallback() {
-  return (
-    <div className="py-16 bg-white max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="h-8 w-48 bg-zinc-200 rounded-md animate-pulse mb-8" />
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div
-            key={i}
-            className="bg-zinc-50 border border-zinc-200/80 rounded-2xl p-4 animate-pulse space-y-4"
-          >
-            <div className="w-full aspect-square bg-zinc-200/80 rounded-xl" />
-            <div className="h-4 w-3/4 bg-zinc-200/80 rounded" />
-            <div className="h-3 w-1/2 bg-zinc-200/80 rounded" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+import React from 'react';
+import CampaignBanner from '@/src/components/storefront/CampaignBanner';
+import ServiceCommitments from '@/src/components/storefront/ServiceCommitments';
+import ProductSection from '@/src/components/storefront/ProductSection';
+import CategoryGrid from '@/src/components/storefront/CategoryGrid';
+import ConfidenceCta from '@/src/components/storefront/ConfidenceCta';
+import {
+  POPULAR_PRODUCTS,
+  RECOMMENDATION_PRODUCTS,
+} from '@/src/data/mock-products';
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* 1. Hero Showcase & Primary CTA */}
-      <HeroBanner />
+    <div className="max-w-[1312px] w-full mx-auto px-4 sm:px-8 py-8 sm:py-12 space-y-8 sm:space-y-10">
+      {/* 1. Chiến dịch mùa thu (Hero Section) */}
+      <CampaignBanner />
 
-      {/* 2. Value Propositions & Trust Pillars */}
-      <ValueProps />
+      {/* 2. Cam kết dịch vụ */}
+      <ServiceCommitments />
 
-      {/* 3. Category Departments Carousel / Grid */}
-      <CategorySection />
+      {/* 3. Được yêu thích tuần này */}
+      <div id="products">
+        <ProductSection
+          title="Được yêu thích tuần này"
+          subtitle="Những lựa chọn đáng tin từ cộng đồng người mua."
+          actionText="Xem tất cả →"
+          actionHref="/products?filter=popular"
+          products={POPULAR_PRODUCTS}
+        />
+      </div>
 
-      {/* 4. Trending & Live Catalog Products with Multi-Variant SKUs */}
-      <Suspense fallback={<CatalogLoadingFallback />}>
-        <FeaturedProducts />
-      </Suspense>
+      {/* 4. Gợi ý hợp với bạn */}
+      <ProductSection
+        title="Gợi ý hợp với bạn"
+        subtitle="Dựa trên sở thích đã chọn, không phải quyết định mua hàng tự động."
+        actionText="Điều chỉnh sở thích"
+        actionHref="/preferences"
+        products={RECOMMENDATION_PRODUCTS}
+      />
 
-      {/* 5. Affiliate Partner Program Banner */}
-      <AffiliateCtaSection />
+      {/* 5. Khám phá theo nhu cầu */}
+      <CategoryGrid />
+
+      {/* 6. Lời mời mua sắm */}
+      <ConfidenceCta />
     </div>
   );
 }

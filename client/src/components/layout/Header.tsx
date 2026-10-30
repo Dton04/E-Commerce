@@ -2,248 +2,164 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import {
-  Search,
-  ShoppingCart,
-  User,
-  Sparkles,
-  ShoppingBag,
-  Heart,
-  ChevronDown,
-  Menu,
-  X,
-  ShieldCheck,
-  TrendingUp,
-} from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, X } from 'lucide-react';
 
-export default function Header() {
-  const [searchQuery, setSearchQuery] = useState('');
+export default function StoreHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      window.location.href = `/?search=${encodeURIComponent(searchQuery.trim())}`;
-    }
-  };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-zinc-200/80 transition-all">
-      {/* Top micro announcement bar */}
-      <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white text-xs py-2 px-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <span className="bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full font-medium border border-amber-400/30 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-amber-300" /> AI-Powered
-            </span>
-            <span className="hidden sm:inline text-zinc-300">
-              Welcome to Next-Gen Marketplace with Smart AI Recommendations & Instant Affiliate Attribution
-            </span>
+    <header className="w-full bg-white border-b border-slate-200 sticky top-0 z-50">
+      {/* 1. Thanh dịch vụ (Top Announcement Bar) */}
+      <div className="bg-[#0f172a] text-white text-xs py-2 px-4 text-center font-normal tracking-wide">
+        Mua an tâm · Đổi trả 7 ngày · Miễn phí giao hàng từ 2 triệu
+      </div>
+
+      {/* 2. Tìm kiếm và tài khoản (Main Header) */}
+      <div className="max-w-[1312px] mx-auto px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4">
+        {/* Thương hiệu */}
+        <Link href="/" className="shrink-0 flex items-center gap-2">
+          <span className="text-xl sm:text-2xl font-bold tracking-tight text-[#0f172a]">
+            SmartCommerce AI
+          </span>
+        </Link>
+
+        {/* Ô Tìm kiếm */}
+        <div className="flex-1 max-w-xl mx-4 hidden md:block">
+          <div className="relative w-full">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Tìm sản phẩm, thương hiệu..."
+              className="w-full bg-[#f8fafc] text-sm text-slate-900 placeholder:text-slate-400 pl-10 pr-4 py-2 rounded-lg border border-slate-200 focus:bg-white focus:border-[#4338ca] focus:ring-2 focus:ring-[#4338ca]/10 outline-none transition-all"
+            />
           </div>
-          <div className="flex items-center space-x-4 text-zinc-300">
-            <Link
-              href="#affiliate"
-              className="hover:text-amber-300 transition-colors flex items-center gap-1 font-medium"
-            >
-              <TrendingUp className="w-3.5 h-3.5" /> Affiliate Program (Earn up to 10%)
-            </Link>
-            <span className="text-zinc-600 hidden md:inline">|</span>
-            <span className="hidden md:inline text-xs text-zinc-400">
-              Hotline: 1900-8888
+        </div>
+
+        {/* Hành động & Người dùng */}
+        <div className="flex items-center gap-5 sm:gap-6 text-sm font-medium text-slate-700">
+          <Link
+            href="/orders"
+            className="hidden sm:inline-block hover:text-[#4338ca] transition-colors"
+          >
+            Đơn hàng
+          </Link>
+
+          <Link
+            href="/profile"
+            className="flex items-center gap-1.5 hover:text-[#4338ca] transition-colors"
+          >
+            <User className="w-4 h-4 text-slate-500" />
+            <span className="hidden sm:inline font-semibold text-slate-900">
+              Minh Anh
             </span>
-          </div>
+          </Link>
+
+          {/* Giỏ hàng Button */}
+          <Link
+            href="/cart"
+            className="inline-flex items-center gap-2 bg-[#4338ca] hover:bg-[#3730a3] text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-lg shadow-xs transition-colors"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            <span>Giỏ hàng · 2</span>
+          </Link>
+
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-1.5 text-slate-600 md:hidden hover:bg-slate-100 rounded-lg"
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </div>
 
-      {/* Main Navbar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5">
-        <div className="flex items-center justify-between gap-4 sm:gap-8">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2.5 group shrink-0">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-              <ShoppingBag className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-zinc-900 via-indigo-950 to-indigo-700 bg-clip-text text-transparent">
-                NovaMart
-              </span>
-              <span className="hidden sm:block text-[10px] font-semibold text-indigo-600 uppercase tracking-widest -mt-1">
-                E-Commerce AI
-              </span>
-            </div>
-          </Link>
-
-          {/* Search bar */}
-          <form
-            onSubmit={handleSearchSubmit}
-            className="flex-1 max-w-2xl relative hidden md:flex items-center"
-          >
-            <div className="relative w-full">
-              <input
-                type="text"
-                placeholder="Search products, brands, or categories (e.g. iPhone, Laptop, Sony)..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-zinc-100/80 hover:bg-zinc-100 focus:bg-white text-zinc-900 text-sm pl-11 pr-24 py-2.5 rounded-full border border-zinc-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
-              />
-              <Search className="w-4 h-4 text-zinc-400 absolute left-4 top-1/2 -translate-y-1/2" />
-              <button
-                type="submit"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-full shadow-sm shadow-indigo-600/30 transition-all hover:shadow-md"
-              >
-                Search
-              </button>
-            </div>
-          </form>
-
-          {/* User actions */}
-          <div className="flex items-center space-x-3 sm:space-x-4">
-            <Link
-              href="#deals"
-              className="hidden lg:flex items-center space-x-1 text-sm font-medium text-zinc-700 hover:text-indigo-600 py-1.5 px-3 rounded-lg hover:bg-zinc-100/80 transition-colors"
-            >
-              <Sparkles className="w-4 h-4 text-amber-500" />
-              <span>Smart Deals</span>
-            </Link>
-
-            <Link
-              href="/cart"
-              className="relative p-2 text-zinc-700 hover:text-indigo-600 hover:bg-zinc-100/80 rounded-full transition-all"
-              aria-label="Shopping Cart"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {cartCount > 0 ? (
-                <span className="absolute top-0 right-0 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
-                  {cartCount}
-                </span>
-              ) : (
-                <span className="absolute top-0 right-0 w-2 h-2 bg-indigo-600 rounded-full"></span>
-              )}
-            </Link>
-
-            <div className="h-6 w-px bg-zinc-200 hidden sm:block"></div>
-
-            <Link
-              href="/login"
-              className="hidden sm:flex items-center space-x-2 text-sm font-medium text-zinc-700 hover:text-indigo-600 py-1.5 px-3 rounded-lg hover:bg-zinc-100/80 transition-colors"
-            >
-              <User className="w-4 h-4 text-zinc-500" />
-              <span>Sign In</span>
-            </Link>
-
-            {/* Mobile menu toggle */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-zinc-700 md:hidden hover:bg-zinc-100 rounded-lg"
-              aria-label="Toggle Mobile Menu"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
+      {/* Mobile search bar */}
+      <div className="px-4 pb-3 md:hidden">
+        <div className="relative w-full">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Tìm sản phẩm, thương hiệu..."
+            className="w-full bg-[#f8fafc] text-sm text-slate-900 placeholder:text-slate-400 pl-10 pr-4 py-2 rounded-lg border border-slate-200 outline-none"
+          />
         </div>
+      </div>
 
-        {/* Mobile Search input */}
-        <div className="mt-3 md:hidden">
-          <form onSubmit={handleSearchSubmit} className="relative w-full">
-            <input
-              type="text"
-              placeholder="Search products, brands..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-zinc-100 text-zinc-900 text-sm pl-10 pr-20 py-2 rounded-full border border-zinc-200 focus:border-indigo-500 outline-none"
-            />
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <button
-              type="submit"
-              className="absolute right-1 top-1/2 -translate-y-1/2 px-3 py-1 bg-indigo-600 text-white text-xs font-semibold rounded-full"
-            >
-              Go
-            </button>
-          </form>
-        </div>
-
-        {/* Category Navigation Pills */}
-        <div className="mt-3 pt-2 border-t border-zinc-100 flex items-center space-x-2 overflow-x-auto scrollbar-none text-xs font-medium text-zinc-600">
+      {/* 3. Danh mục (Category Navigation Bar) */}
+      <div className="border-t border-slate-100 bg-white">
+        <div className="max-w-[1312px] mx-auto px-4 sm:px-8 py-2.5 flex items-center gap-6 overflow-x-auto text-xs sm:text-sm font-medium text-slate-600 whitespace-nowrap scrollbar-none">
           <Link
-            href="/"
-            className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-full shrink-0 font-semibold border border-indigo-200/60"
+            href="/categories"
+            className="flex items-center gap-1.5 font-bold text-slate-900 hover:text-[#4338ca] transition-colors"
           >
-            All Products
+            <span>☰</span>
+            <span>Tất cả danh mục</span>
           </Link>
           <Link
-            href="/?search=smartphone"
-            className="px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 rounded-full shrink-0 transition-colors"
+            href="/?category=tech"
+            className="hover:text-slate-900 transition-colors"
           >
-            Smartphones
+            Công nghệ
           </Link>
           <Link
-            href="/?search=laptop"
-            className="px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 rounded-full shrink-0 transition-colors"
+            href="/?category=home"
+            className="hover:text-slate-900 transition-colors"
           >
-            Laptops & MacBooks
+            Nhà cửa & đời sống
           </Link>
           <Link
-            href="/?search=audio"
-            className="px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 rounded-full shrink-0 transition-colors"
+            href="/?category=fashion"
+            className="hover:text-slate-900 transition-colors"
           >
-            Audio & Headphones
+            Thời trang
           </Link>
           <Link
-            href="/?search=watch"
-            className="px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 rounded-full shrink-0 transition-colors"
+            href="/?tab=deals"
+            className="hover:text-slate-900 transition-colors"
           >
-            Smartwatches
+            Ưu đãi hôm nay
           </Link>
           <Link
-            href="/?search=accessories"
-            className="px-3 py-1.5 hover:bg-zinc-100 hover:text-zinc-900 rounded-full shrink-0 transition-colors"
+            href="/?tab=for-you"
+            className="text-[#4338ca] font-semibold hover:text-[#3730a3] transition-colors"
           >
-            Accessories
-          </Link>
-          <Link
-            href="#deals"
-            className="px-3 py-1.5 text-rose-600 hover:bg-rose-50 rounded-full shrink-0 font-semibold flex items-center gap-1"
-          >
-            <Sparkles className="w-3 h-3 text-rose-500" />
-            Flash Deals
+            Dành riêng cho bạn
           </Link>
         </div>
       </div>
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-zinc-200 bg-white px-4 py-4 space-y-3">
+        <div className="md:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-3">
           <Link
-            href="/"
+            href="/orders"
             onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-sm font-semibold text-zinc-800"
+            className="block text-sm font-medium text-slate-700 py-1"
           >
-            Home
+            Đơn hàng của tôi
           </Link>
           <Link
-            href="#categories"
+            href="/profile"
             onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-sm font-medium text-zinc-600"
+            className="block text-sm font-medium text-slate-700 py-1"
           >
-            Categories
+            Tài khoản (Minh Anh)
           </Link>
-          <Link
-            href="#affiliate"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-sm font-medium text-amber-600"
-          >
-            Affiliate Program (Earn 10%)
-          </Link>
-          <Link
-            href="/login"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block py-2 text-sm font-medium text-indigo-600"
-          >
-            Sign In / Register
-          </Link>
+          <div className="pt-2 border-t border-slate-100 space-y-2 text-sm text-slate-600">
+            <Link href="/?category=tech" className="block py-1">
+              Công nghệ
+            </Link>
+            <Link href="/?category=home" className="block py-1">
+              Nhà cửa & đời sống
+            </Link>
+            <Link href="/?category=fashion" className="block py-1">
+              Thời trang
+            </Link>
+          </div>
         </div>
       )}
     </header>
   );
 }
+

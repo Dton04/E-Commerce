@@ -1,23 +1,19 @@
+import React from 'react';
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import './globals.css';
+import { Inter } from 'next/font/google';
 import Header from '../src/components/layout/Header';
 import Footer from '../src/components/layout/Footer';
+import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+const inter = Inter({
+  subsets: ['latin', 'vietnamese'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'NovaMart | Next-Gen E-Commerce, Multi-Variant Catalog & AI Discovery',
+  title: 'SmartCommerce AI · Chọn thông minh, Sống tiện hơn',
   description:
-    'Discover authentic electronics, smartphones, and audio gear from authorized vendors. Enjoy real-time SKU inventory, AI recommendations, and verified affiliate marketing attribution.',
+    'Nền tảng mua sắm trực tuyến thông minh với gợi ý cá nhân hóa AI, cam kết hàng chính hãng và đổi trả trong 7 ngày.',
 };
 
 export default function RootLayout({
@@ -26,11 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased scroll-smooth`}
-    >
-      <body className="min-h-full flex flex-col bg-white text-zinc-900 selection:bg-indigo-500 selection:text-white">
+    <html lang="vi" className={`${inter.className} h-full antialiased scroll-smooth`}>
+      <body className="min-h-full flex flex-col bg-white text-[#0f172a] selection:bg-[#4338ca] selection:text-white">
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
