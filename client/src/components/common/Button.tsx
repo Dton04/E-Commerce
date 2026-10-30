@@ -49,9 +49,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={disabled}
-        className={`inline-flex items-center justify-center font-semibold rounded-lg transition-all outline-none focus:ring-2 focus:ring-offset-1 select-none ${sizeClasses} ${
-          disabled ? disabledClasses : variantClasses
-        } ${fullWidth ? 'w-full' : ''} ${className}`}
+        className={`inline-flex items-center justify-center font-semibold rounded-lg transition-all outline-none focus:ring-2 focus:ring-offset-1 select-none ${sizeClasses} ${disabled ? disabledClasses : variantClasses
+          } ${fullWidth ? 'w-full' : ''} ${className}`}
         {...props}
       >
         {children}
