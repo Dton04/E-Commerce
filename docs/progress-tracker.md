@@ -25,11 +25,11 @@ Statuses: Todo, In Progress, Blocked, Done. Done requires verified acceptance ev
 
 ## Verified Repository Artifacts
 
-NestJS modular monolith; Prisma 7 with PostgreSQL adapter; schema & migrations; Auth & RBAC module (/api/v1/auth) with refresh rotation; Catalog module (/api/v1/categories, /api/v1/products) with multi-variant SKUs, bounded search/pagination and composite indexes (status + createdAt); UploadModule (/api/v1/upload, static file serving at /uploads/); Swagger docs at /api/docs; NestJS best practices skills; 45 passing e2e tests.
+NestJS modular monolith; Prisma 7 with PostgreSQL adapter; schema & migrations; Auth & RBAC module (/api/v1/auth) with refresh rotation; Catalog module (/api/v1/categories, /api/v1/products) with multi-variant SKUs, bounded search/pagination and composite indexes (status + createdAt); UploadModule (/api/v1/upload, static file serving at /uploads/); Swagger docs at /api/docs; NestJS best practices skills; 45 passing e2e tests; Next.js 16 Storefront Homepage (Header, HeroBanner, CategorySection, FeaturedProducts with live API integration & pagination, ValueProps, Affiliate CTA, Footer) with verified Turbopack production build.
 
 ## Gaps
 
-Cart, Checkout/Order processing, Inventory safe concurrency, Payment integration, Affiliate attribution engine, AI recommendations, frontend, and CI/CD setup remain to be implemented.
+Cart, Checkout/Order processing, Inventory safe concurrency, Payment integration, Affiliate attribution engine, AI recommendations, and remaining frontend pages (Product detail, Cart, Checkout, Merchant/Affiliate portals) remain to be implemented.
 
 ## Confirmed Decisions
 

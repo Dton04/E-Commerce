@@ -55,7 +55,7 @@ async function bootstrap() {
     },
   });
 
-  const port = process.env.PORT ?? 3000;
+  const port = process.env.PORT ?? 4000;
   await app.listen(port);
   console.log(`Server is running on: http://localhost:${port}/api/v1`);
   console.log(`Swagger UI is available at: http://localhost:${port}/api/docs`);

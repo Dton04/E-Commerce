@@ -2,11 +2,13 @@
 
 ## Status
 
-client/ exists but is empty. No visual design, frontend configuration, or reusable UI components are verified.
+`client/` (Next.js 16.4.2, React 19, Tailwind CSS v4, Lucide Icons):
+- **Storefront Home (`app/page.tsx`):** Implemented with `Header`, `HeroBanner`, `ValueProps`, `CategorySection`, `FeaturedProducts` (with live NestJS API connection, sorting, tab filters, pagination, loading skeletons, empty/error states), `AffiliateCtaSection`, and `Footer`.
+- Verified production build via `npm run build` with Turbopack and Partial Prerendering.
 
 ## Confirmed Target
 
-The product owner specified Next.js, TypeScript, Tailwind CSS, and shadcn/ui for the planned frontend. This is a target, not an implemented stack.
+The frontend is implemented using Next.js 16 App Router, React 19, TypeScript, Tailwind CSS v4, and Lucide React. API calls connect to NestJS Modular Monolith backend on port 3001 (`/api/v1`).
 
 ## Design Decisions
 
